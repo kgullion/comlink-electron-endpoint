@@ -1,0 +1,13 @@
+{
+  "name": "comlink-electron-endpoint",
+  "version": "1.0.0",
+  "description": "Use Comlink to communicate between main and renderer.",
+  "keywords": ["comlink", "electron", "messageport", "messageportmain", "rpc", "ipc"],
+  "homepage": "https://github.com/kgullion/comlink-electron-endpoint",
+  "repository": {
+    "type": "git", "url": "https://github.com/kgullion/comlink-electron-endpoint.git"
+  },
+  "author": "Kyle Gullion",
+  "license": "ISC",
+  "private": false
+}
