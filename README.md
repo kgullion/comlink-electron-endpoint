@@ -39,7 +39,7 @@ import * as Comlink from 'comlink';
 import { ipcMain } from 'electron';
 import { electronEndpoint } from 'comlink-electron-endpoint/main';
 
-ipcMain.on('port', (event) => {
+ipcMain.on('comlink-port', (event) => {
   // object to be exposed to renderer
   const obj = {
     counter: 0,

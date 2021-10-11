@@ -1,68 +1,18 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.electronEndpoint = void 0;
-var electron_1 = require("electron");
 var comlink_1 = require("comlink");
-var protocol_1 = require("comlink/src/protocol");
-// MessagePortMain is not StructuredCloneable but the proxy transferHandler
-// relies on being able to pass a MessagePort via the postMessage body.
-// Instead, we swap out the passed port for an index into transfers and set the
-// message type to a proxy token.
-// if val is transferred endpoint, remove it from the WireValue, and mark with
-// our own WireValueType (null "SHOULD" be a safe sentinel value for WireValueType)
-var proxyToken = null;
-function packWireValue(val, transfers) {
-    if (val.type !== protocol_1.WireValueType.HANDLER)
-        return val;
-    else {
-        var index = transfers.findIndex(function (p) { return val.value === p; });
-        if (index >= 0) {
-            val.type = proxyToken;
-            val.value = index;
-        }
-        return val;
-    }
-}
-// check for proxyToken sentinel value and swap out the index for the endpoint
-function unpackWireValue(val, transfers) {
-    if (val.type !== proxyToken)
-        return val;
-    else {
-        val.type = protocol_1.WireValueType.HANDLER;
-        val.value = electronEndpoint(transfers[val.value]);
-        return val;
-    }
-}
-// pack all the transferrables and properly transfer ports
-function packMessage(message, transfers) {
-    if (message.type === protocol_1.MessageType.SET)
-        message.value = packWireValue(message.value, transfers);
-    else if (message.type === protocol_1.MessageType.APPLY ||
-        message.type === protocol_1.MessageType.CONSTRUCT)
-        message.argumentList = message.argumentList.map(function (v) {
-            return packWireValue(v, transfers);
-        });
-    return [message, transfers];
-}
-// unpack the transferred ports
-function unpackMessage(message, transfers) {
-    if (message.type === protocol_1.MessageType.SET)
-        message.value = unpackWireValue(message.value, transfers);
-    else if (message.type === protocol_1.MessageType.APPLY ||
-        message.type === protocol_1.MessageType.CONSTRUCT)
-        message.argumentList = message.argumentList.map(function (v) {
-            return unpackWireValue(v, transfers);
-        });
-    return message;
-}
-// wraps a messagePortMain in the logic required for an electron comlink endpoint
+var electron_1 = require("electron");
+var common_1 = require("./common");
 function electronEndpoint(port) {
     var listeners = new WeakMap();
     var ep = {
         postMessage: function (message, ports) {
             // shim for comlink proxy
-            if (ports === null || ports === void 0 ? void 0 : ports.length)
-                port.postMessage.apply(port, packMessage(message, ports));
+            if (ports === null || ports === void 0 ? void 0 : ports.length) {
+                var _a = (0, common_1.packMessage)(message, ports), msg = _a[0], xfers = _a[1];
+                port.postMessage(msg, xfers);
+            }
             else
                 port.postMessage(message, ports);
         },
@@ -71,7 +21,10 @@ function electronEndpoint(port) {
                 var data = _a.data, ports = _a.ports;
                 // shim for comlink proxy
                 if (ports.length)
-                    listener({ data: unpackMessage(data, ports), ports: [] });
+                    listener({
+                        data: (0, common_1.unpackMessage)(data, ports, electronEndpoint),
+                        ports: [],
+                    });
                 else
                     listener({ data: data, ports: ports });
             };
@@ -83,14 +36,13 @@ function electronEndpoint(port) {
             if (!l)
                 return;
             port.off('message', l);
-            listeners["delete"](listener);
+            listeners.delete(listener);
         },
-        start: port.start.bind(port)
+        start: port.start.bind(port),
     };
     return ep;
 }
 exports.electronEndpoint = electronEndpoint;
-// patch the transferHandler to use electronEndpoint
 var handler = comlink_1.transferHandlers.get('proxy');
 if (handler) {
     handler.serialize = function (obj) {
