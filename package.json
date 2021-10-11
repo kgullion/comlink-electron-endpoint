@@ -1,6 +1,6 @@
 {
   "name": "comlink-electron-endpoint",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Use Comlink to communicate between main and renderer.",
   "keywords": [
     "comlink",

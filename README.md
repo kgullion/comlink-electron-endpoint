@@ -21,8 +21,8 @@ async function init() {
   // create an electronEndpoint from the other end
   const endpoint = electronEndpoint(port2);
 
-  // wrap the other port to proxy the remote object
-  const obj = Comlink.wrap(port2);
+  // wrap the endpoint to proxy the remote object
+  const obj = Comlink.wrap(endpoint);
 
   // call functions on remote object
   alert(`Counter: ${await obj.counter}`);
