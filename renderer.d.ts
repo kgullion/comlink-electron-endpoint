@@ -1,2 +1,2 @@
-import type { Endpoint } from 'comlink/src/protocol';
+import type { Endpoint } from "comlink/src/protocol";
 export declare function electronEndpoint(port: MessagePort): Endpoint;
